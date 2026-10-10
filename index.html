@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aidar_Matrix_Terminal_v4</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff33;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            margin: 0;
+            text-shadow: 0 0 5px #00ff33;
+            overflow-x: hidden;
+        }
+        .terminal {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .log-entry {
+            font-size: 16px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #ff3333;
+            text-shadow: 0 0 5px #ff3333;
+        }
+        .input-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .prompt {
+            color: #00ff33;
+        }
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: #00ff33;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            outline: none;
+            flex-grow: 1;
+            text-shadow: 0 0 5px #00ff33;
+        }
+        /* Стили для холста Матрицы (изначально скрыт) */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            z-index: 9999;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Холст для отрисовки падающего кода -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="terminal" id="terminal-ui">
+        <div id="history">
+            <div class="log-entry">=== AIDAR OS v4.0 MATRIX EDITION ===</div>
+            <div class="log-entry">Введите 'help' для просмотра списка доступных команд.</div>
+            <div class="log-entry">--------------------------------------------------</div>
+        </div>
+        
+        <div class="input-line">
+            <span class="prompt">root@aidar_pc:~#</span>
+            <input type="text" id="cmd-input" autofocus autocomplete="off">
+        </div>
+    </div>
+
+    <script>
+        const historyDiv = document.getElementById('history');
+        const inputField = document.getElementById('cmd-input');
+        const terminalUi = document.getElementById('terminal-ui');
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let matrixInterval = null;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playKeySound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        inputField.addEventListener('keydown', () => playKeySound());
+
+        inputField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const command = inputField.value.trim().toLowerCase();
+                addLog(`root@aidar_pc:~# ${inputField.value}`, 'log-entry');
+                
+                if (command === 'help') {
+                    addLog('Доступные команды:\n  help    - показать это меню\n  scan    - запустить сканирование сети\n  hack    - симуляция взлома протокола\n  matrix  - запустить режим Матрицы\n  clear   - очистить экран', 'log-entry');
+                } else if (command === 'scan') {
+                    addLog('Запуск сканирования портов...\n[OK] Port 80 found\n[OK] Port 443 found\nСканирование завершено.', 'log-entry');
+                } else if (command === 'hack') {
+                    addLog('ВНИМАНИЕ: Попытка обхода брандмауэра...\n..........................\n[УСПЕШНО] КЛЮЧИ ПОЛУЧЕНЫ. СИСТЕМА ПОД КОНТРОЛЕМ.', 'error');
+                } else if (command === 'clear') {
+                    historyDiv.innerHTML = '';
+                } else if (command === 'matrix') {
+                    startMatrixMode();
+                } else if (command !== '') {
+                    addLog(`Ошибка: команда '${command}' не найдена.`, 'error');
+                }
+                
+                inputField.value = '';
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
+
+        function addLog(text, className) {
+            const div = document.createElement('div');
+            div.className = className;
+            div.textContent = text;
+            historyDiv.appendChild(div);
+        }
+
+        document.addEventListener('click', () => {
+            if (canvas.style.display !== 'block') inputField.focus();
+        });
+
+        // ЛОГИКА РЕЖИМА МАТРИЦЫ
+        function startMatrixMode() {
+            terminalUi.style.display = 'none';
+            canvas.style.display = 'block';
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Набор символов: японские иероглифы (катакана) и цифры
+            const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890";
+            const alphabet = katakana.split("");
+
+            const fontSize = 16;
+            const columns = canvas.width / fontSize;
+
+            const rainDrops = [];
+            for (let x = 0; x < columns; x++) {
+                rainDrops[x] = 1;
+            }
+
+            const draw = () => {
+                // Создаем эффект шлейфа, слегка закрашивая старые кадры полупрозрачным черным цветом
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#0F0'; // Зеленый цвет текста
+                ctx.font = fontSize + 'px monospace';
+
+                for (let i = 0; i < rainDrops.length; i++) {
+                    const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+                    ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+                    if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        rainDrops[i] = 0;
+                    }
+                    rainDrops[i]++;
+                }
+            };
+
+            matrixInterval = setInterval(draw, 30);
+        }
+
+        function stopMatrixMode() {
+            if (matrixInterval) {
+                clearInterval(matrixInterval);
+                canvas.style.display = 'none';
+                terminalUi.style.display = 'flex';
+                inputField.focus();
+            }
+        }
+
+        // Выход из матрицы по нажатию клавиши ESC или клику на экран
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') stopMatrixMode();
+        });
+        canvas.addEventListener('click', () => stopMatrixMode());
+
+        // Адаптация размера матрицы при изменении окна браузера
+        window.addEventListener('resize', () => {
+            if (canvas.style.display === 'block') {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+    </script>
+
+</body>
+</html>
