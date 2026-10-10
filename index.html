@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aidar_Matrix_Terminal_v4</title>
+    <title>Aidar_Ultimate_Terminal_v5</title>
     <style>
         body {
             background-color: #050505;
@@ -12,7 +12,7 @@
             padding: 20px;
             margin: 0;
             text-shadow: 0 0 5px #00ff33;
-            overflow-x: hidden;
+            overflow: hidden; /* Запрещаем прокрутку для спецэффектов */
         }
         .terminal {
             display: flex;
@@ -48,7 +48,7 @@
             flex-grow: 1;
             text-shadow: 0 0 5px #00ff33;
         }
-        /* Стили для холста Матрицы (изначально скрыт) */
+        /* Стили для экрана Матрицы */
         #matrix-canvas {
             position: fixed;
             top: 0;
@@ -59,16 +59,26 @@
             z-index: 9999;
             background: black;
         }
+        /* Стили для агрессивного спама текстом */
+        .troll-text {
+            position: fixed;
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 0 0 8px #ff0000;
+            z-index: 10000;
+            pointer-events: none;
+            font-family: sans-serif;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Холст для отрисовки падающего кода -->
     <canvas id="matrix-canvas"></canvas>
 
     <div class="terminal" id="terminal-ui">
         <div id="history">
-            <div class="log-entry">=== AIDAR OS v4.0 MATRIX EDITION ===</div>
+            <div class="log-entry">=== AIDAR OS v5.0 ULTIMATE ===</div>
             <div class="log-entry">Введите 'help' для просмотра списка доступных команд.</div>
             <div class="log-entry">--------------------------------------------------</div>
         </div>
@@ -87,6 +97,7 @@
         const ctx = canvas.getContext('2d');
 
         let matrixInterval = null;
+        let trollInterval = null;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playKeySound() {
@@ -111,7 +122,7 @@
                 addLog(`root@aidar_pc:~# ${inputField.value}`, 'log-entry');
                 
                 if (command === 'help') {
-                    addLog('Доступные команды:\n  help    - показать это меню\n  scan    - запустить сканирование сети\n  hack    - симуляция взлома протокола\n  matrix  - запустить режим Матрицы\n  clear   - очистить экран', 'log-entry');
+                    addLog('Доступные команды:\n  help    - показать это меню\n  scan    - запустить сканирование сети\n  hack    - симуляция взлома протокола\n  matrix  - запустить режим Матрицы\n  hacking - запустить протокол X\n  clear   - очистить экран', 'log-entry');
                 } else if (command === 'scan') {
                     addLog('Запуск сканирования портов...\n[OK] Port 80 found\n[OK] Port 443 found\nСканирование завершено.', 'log-entry');
                 } else if (command === 'hack') {
@@ -120,6 +131,8 @@
                     historyDiv.innerHTML = '';
                 } else if (command === 'matrix') {
                     startMatrixMode();
+                } else if (command === 'hacking') {
+                    startTrollMode();
                 } else if (command !== '') {
                     addLog(`Ошибка: команда '${command}' не найдена.`, 'error');
                 }
@@ -140,45 +153,31 @@
             if (canvas.style.display !== 'block') inputField.focus();
         });
 
-        // ЛОГИКА РЕЖИМА МАТРИЦЫ
+        // РЕЖИМ МАТРИЦЫ
         function startMatrixMode() {
             terminalUi.style.display = 'none';
             canvas.style.display = 'block';
-            
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-
-            // Набор символов: японские иероглифы (катакана) и цифры
             const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890";
             const alphabet = katakana.split("");
-
             const fontSize = 16;
             const columns = canvas.width / fontSize;
-
             const rainDrops = [];
-            for (let x = 0; x < columns; x++) {
-                rainDrops[x] = 1;
-            }
+            for (let x = 0; x < columns; x++) rainDrops[x] = 1;
 
             const draw = () => {
-                // Создаем эффект шлейфа, слегка закрашивая старые кадры полупрозрачным черным цветом
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#0F0'; // Зеленый цвет текста
+                ctx.fillStyle = '#0F0';
                 ctx.font = fontSize + 'px monospace';
-
                 for (let i = 0; i < rainDrops.length; i++) {
                     const text = alphabet[Math.floor(Math.random() * alphabet.length)];
                     ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-
-                    if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                        rainDrops[i] = 0;
-                    }
+                    if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) rainDrops[i] = 0;
                     rainDrops[i]++;
                 }
             };
-
             matrixInterval = setInterval(draw, 30);
         }
 
@@ -191,13 +190,44 @@
             }
         }
 
-        // Выход из матрицы по нажатию клавиши ESC или клику на экран
+        // СЕКРЕТНЫЙ РЕЖИМ СПАМА ТЕКСТОМ
+        function startTrollMode() {
+            // Сначала делаем экран полностью черным, скрывая интерфейс
+            terminalUi.style.display = 'none';
+            document.body.style.backgroundColor = '#000000';
+
+            // Через 1 секунду (1000 миллисекунд) запускаем лавину текста
+            setTimeout(() => {
+                trollInterval = setInterval(() => {
+                    const div = document.createElement('div');
+                    div.className = 'troll-text';
+                    div.textContent = 'ЛОХ ЕБАНЫЙ';
+                    
+                    // Случайные координаты по всему экрану
+                    const randomX = Math.floor(Math.random() * (window.innerWidth - 150));
+                    const randomY = Math.floor(Math.random() * (window.innerHeight - 30));
+                    
+                    div.style.left = randomX + 'px';
+                    div.style.top = randomY + 'px';
+                    
+                    // Случайный размер шрифта для большего хаоса (от 18px до 36px)
+                    div.style.fontSize = Math.floor(Math.random() * 18 + 18) + 'px';
+                    
+                    document.body.appendChild(div);
+                }, 40); // Скорость появления: каждые 40 миллисекунд
+            }, 1000);
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') stopMatrixMode();
+            if (e.key === 'Escape') {
+                stopMatrixMode();
+                // Для сброса спам-режима проще всего обновить страницу
+                if(trollInterval) window.location.reload();
+            }
         });
+        
         canvas.addEventListener('click', () => stopMatrixMode());
 
-        // Адаптация размера матрицы при изменении окна браузера
         window.addEventListener('resize', () => {
             if (canvas.style.display === 'block') {
                 canvas.width = window.innerWidth;
