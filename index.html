@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aidar_Ultimate_Terminal_v5</title>
+    <title>Aidar_Terminal_v7</title>
     <style>
         body {
             background-color: #050505;
@@ -12,7 +12,7 @@
             padding: 20px;
             margin: 0;
             text-shadow: 0 0 5px #00ff33;
-            overflow: hidden; /* Запрещаем прокрутку для спецэффектов */
+            overflow: hidden;
         }
         .terminal {
             display: flex;
@@ -25,6 +25,17 @@
             font-size: 16px;
             line-height: 1.4;
             white-space: pre-wrap;
+        }
+        /* Большой и важный текст-подсказка */
+        .promo-text {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffff00; /* Желтый цвет для привлечения внимания */
+            text-shadow: 0 0 8px #ffff00;
+            border: 1px solid #ffff00;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
         }
         .error {
             color: #ff3333;
@@ -48,7 +59,6 @@
             flex-grow: 1;
             text-shadow: 0 0 5px #00ff33;
         }
-        /* Стили для экрана Матрицы */
         #matrix-canvas {
             position: fixed;
             top: 0;
@@ -59,7 +69,6 @@
             z-index: 9999;
             background: black;
         }
-        /* Стили для агрессивного спама текстом */
         .troll-text {
             position: fixed;
             color: #ff0000;
@@ -77,8 +86,11 @@
     <canvas id="matrix-canvas"></canvas>
 
     <div class="terminal" id="terminal-ui">
+        <!-- Крупная видимая подсказка для пользователя -->
+        <div class="promo-text">Внимание! Если введешь команду hacking, ты можешь взломать любого!</div>
+
         <div id="history">
-            <div class="log-entry">=== AIDAR OS v5.0 ULTIMATE ===</div>
+            <div class="log-entry">=== AIDAR OS v7.0 COMPLETED ===</div>
             <div class="log-entry">Введите 'help' для просмотра списка доступных команд.</div>
             <div class="log-entry">--------------------------------------------------</div>
         </div>
@@ -112,6 +124,20 @@
             gain.connect(audioCtx.destination);
             osc.start();
             osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playBeepSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
         }
 
         inputField.addEventListener('keydown', () => playKeySound());
@@ -153,7 +179,6 @@
             if (canvas.style.display !== 'block') inputField.focus();
         });
 
-        // РЕЖИМ МАТРИЦЫ
         function startMatrixMode() {
             terminalUi.style.display = 'none';
             canvas.style.display = 'block';
@@ -190,38 +215,32 @@
             }
         }
 
-        // СЕКРЕТНЫЙ РЕЖИМ СПАМА ТЕКСТОМ
         function startTrollMode() {
-            // Сначала делаем экран полностью черным, скрывая интерфейс
             terminalUi.style.display = 'none';
             document.body.style.backgroundColor = '#000000';
 
-            // Через 1 секунду (1000 миллисекунд) запускаем лавину текста
             setTimeout(() => {
                 trollInterval = setInterval(() => {
                     const div = document.createElement('div');
                     div.className = 'troll-text';
                     div.textContent = 'ЛОХ ЕБАНЫЙ';
                     
-                    // Случайные координаты по всему экрану
                     const randomX = Math.floor(Math.random() * (window.innerWidth - 150));
                     const randomY = Math.floor(Math.random() * (window.innerHeight - 30));
                     
                     div.style.left = randomX + 'px';
                     div.style.top = randomY + 'px';
-                    
-                    // Случайный размер шрифта для большего хаоса (от 18px до 36px)
                     div.style.fontSize = Math.floor(Math.random() * 18 + 18) + 'px';
                     
                     document.body.appendChild(div);
-                }, 40); // Скорость появления: каждые 40 миллисекунд
+                    playBeepSound();
+                }, 60);
             }, 1000);
         }
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 stopMatrixMode();
-                // Для сброса спам-режима проще всего обновить страницу
                 if(trollInterval) window.location.reload();
             }
         });
